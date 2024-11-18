@@ -99,7 +99,11 @@ def run_algorithm(algorithm, start_node, goal_node, exp):
     elif algorithm == 'ucs':
         return run_ucs(start_node, goal_node, exp)
     elif algorithm == 'greedy':
-        return run_greedy_best_first(start_node, goal_node)
+        return run_greedy_best_first(start_node, goal_node, exp)
+    elif algorithm == 'dls':
+        return run_dls(start_node, goal_node, exp)
+    elif algorithm == 'ids':
+        return run_ids(start_node, goal_node, exp)
     else:
         raise ValueError(f"Algorithm {algorithm} is not supported.")
 
@@ -347,24 +351,26 @@ def get_edge_cost(n1, n2):
 
 
 # Greedy Best-First Search algorithm
-def run_greedy_best_first(start_node, goal_node):
+def run_greedy_best_first(start_node, goal_node, exp):
     # Priority queue where elements are (heuristic, node)
     ##current_text = "Running titil Greedy Best-First"
     priority_queue = [(heuristic(start_node, goal_node), start_node)]
     visited = set()  # Track visited nodes
+    expansions = 0
 
-    while priority_queue:
+    while priority_queue and expansions < exp:
         _, n1 = heapq.heappop(priority_queue)  # Pop the node with the lowest heuristic value
         if n1 in visited:
             continue
         visited.add(n1)
+        expansions += 1
         current = graph[n1]
-        current[2] = white  # Update node outline color
-        current[3] = yellow  # Current node fill color
+        current[3] = white  # Update node outline color
+        current[4] = yellow  # Current node fill color
 
         # Check if we reached the goal node
         if n1 == goal_node:
-            current[3] = blue  # Mark goal node as complete
+            current[4] = magenta  # Mark goal node as complete
             update()
             ##draw_text("Running Greedy Best-First", font_path, font_size, text_color, 10, 10)
             break
@@ -374,14 +380,14 @@ def run_greedy_best_first(start_node, goal_node):
             if n2 not in visited:
                 heapq.heappush(priority_queue, (heuristic(n2, goal_node), n2))  # Push to the priority queue
                 # Discovered n2, update colors for node and edge
-                graph[n2][2] = white
-                graph[n2][3] = red 
+                graph[n2][3] = white
+                graph[n2][4] = red 
                 edges[edge_id(n1, n2)][1] = white  
                 update()
 
         
         # Mark current node as complete
-        current[3] = blue 
+        current[4] = blue 
         update_with_text(current_text)
         
 # Heuristic function (Euclidean distance)
@@ -390,10 +396,98 @@ def heuristic(node, goal_node):
     x2, y2 = graph[goal_node][0]
     return sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
+def run_dls(start_node, goal_node, depth_limit):  
+    stack = [(start_node, 0)]  # Stack with tuples (node, depth)
+    visited = set()  # Set to track visited nodes
 
-#strategies = ['bfs', 'dfs', 'ucs', 'greedy']  # List of algorithms
-strategies = ['bfs', 'dfs', 'ucs']
-n = 2 # Switch algorithm after reaching depth of n
+    while stack:
+        n1, depth = stack.pop()  # Get the current node and its depth
+        if n1 in visited:
+            continue
+        visited.add(n1)
+
+        current = graph[n1]
+        current[3] = white  # Update node outline color
+        current[4] = yellow  # Update node fill color
+        update()
+
+        # Check if we reached the goal node
+        if n1 == goal_node:
+            current[4] = magenta  # Mark goal node as complete
+            update()
+            print(f"Goal node {goal_node} reached at depth {depth}.")
+            return
+
+        # If depth limit is reached, do not expand further
+        if depth < depth_limit:
+            # Add adjacent nodes to the stack with increased depth
+            for n2 in reversed(current[1]):  # Reverse the order of adjacent nodes
+                if graph[n2][4] == black and n2 not in visited:
+                    stack.append((n2, depth + 1))  # Push node with updated depth
+                    graph[n2][3] = white  # Update outline color
+                    graph[n2][4] = red    # Update fill color
+                    edges[edge_id(n1, n2)][1] = white  # Update edge color
+                    update()
+
+        # Mark current node as complete
+        current[4] = blue
+        update()
+
+    # If the stack is empty and the goal is not reached
+    print(f"Goal node {goal_node} not found within depth limit {depth_limit}.")
+
+
+def run_ids(start_node, goal_node, max_depth):
+    for depth_limit in range(max_depth + 1):  # Iterate over depth limits from 0 to max_depth
+        print(f"Exploring with depth limit {depth_limit}")
+        
+        stack = [(start_node, 0)]  # Stack with tuples (node, depth)
+        visited = set()  # Reset visited nodes for each depth limit
+
+        while stack:
+            n1, depth = stack.pop()  # Get the current node and its depth
+
+            current = graph[n1]
+            current[3] = white  # Update node outline color
+            current[4] = yellow  # Update node fill color
+            update()
+
+            # Check if we reached the goal node
+            if n1 == goal_node:
+                current[4] = magenta  # Mark goal node as complete
+                update()
+                print(f"Goal node {goal_node} reached at depth {depth}.")
+                return
+
+            # If depth limit is reached, do not expand further
+            if depth < depth_limit:
+                # Add adjacent nodes to the stack with increased depth
+                for n2 in reversed(current[1]):  # Reverse the order of adjacent nodes
+                    if n2 not in visited:
+                        stack.append((n2, depth + 1))  # Push node with updated depth
+                        graph[n2][3] = white  # Update outline color
+                        graph[n2][4] = red    # Update fill color
+                        edges[edge_id(n1, n2)][1] = white  # Update edge color
+                        update()
+
+            # Mark the current node as complete
+            current[4] = blue
+            visited.add(n1)  # Mark the node as visited
+            update()
+
+        # If the stack is empty and the goal is not reached for this depth
+        print(f"Depth limit {depth_limit} reached. Goal node {goal_node} not found.")
+    
+    # If no solution is found within max_depth
+    print(f"Goal node {goal_node} not found within maximum depth {max_depth}.")
+
+
+
+
+
+#strategies = ['bfs', 'dfs', 'ucs', 'greedy', 'dls','ids']  # List of algorithms
+strategies = ['ids']
+n = 3 # Switch algorithm after reaching depth of n
 
 ##alternate_search_with_depth(strategies, n, start_node=0, final_goal_node=11)
 #print(f"el nodo es: {find_goal_node_from_depth(8, n)}")
