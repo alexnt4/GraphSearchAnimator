@@ -485,9 +485,9 @@ def run_ids(start_node, goal_node, max_depth):
 
 
 
-#strategies = ['bfs', 'dfs', 'ucs', 'greedy', 'dls','ids']  # List of algorithms
-strategies = ['ids']
-n = 3 # Switch algorithm after reaching depth of n
+strategies = ['bfs', 'dfs', 'ucs', 'greedy', 'dls','ids']  # List of algorithms
+#strategies = ['ids']
+n = 13 # Switch algorithm after reaching depth of n
 
 ##alternate_search_with_depth(strategies, n, start_node=0, final_goal_node=11)
 #print(f"el nodo es: {find_goal_node_from_depth(8, n)}")
